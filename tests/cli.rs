@@ -69,6 +69,10 @@ fn engines_succeeds_with_invalid_config() {
 
 #[test]
 fn voices_with_explicit_engine_ignores_invalid_config() {
+    if !cfg!(target_os = "macos") {
+        return;
+    }
+
     let env = TestEnv::new();
     env.write_invalid_config();
 
