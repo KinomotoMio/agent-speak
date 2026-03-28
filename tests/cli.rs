@@ -4,6 +4,8 @@ use std::path::{Path, PathBuf};
 use assert_cmd::Command;
 use predicates::prelude::*;
 use tempfile::TempDir;
+use wiremock::matchers::{body_json, method, path};
+use wiremock::{Mock, MockServer, ResponseTemplate};
 
 struct TestEnv {
     temp: TempDir,
@@ -172,4 +174,44 @@ fn unknown_engine_still_errors_cleanly() {
         .assert()
         .failure()
         .stderr(predicate::str::contains("Unknown engine: nope"));
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn voices_minimax_prints_id_and_label() {
+    if !cfg!(target_os = "macos") {
+        return;
+    }
+
+    let env = TestEnv::new();
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/v1/get_voice"))
+        .and(body_json(serde_json::json!({ "voice_type": "all" })))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "system_voice": [
+                {
+                    "voice_id": "English_expressive_narrator",
+                    "voice_name": "Expressive Narrator",
+                    "description": ["Warm and articulate"]
+                }
+            ],
+            "voice_cloning": [],
+            "voice_generation": [],
+            "base_resp": {
+                "status_code": 0,
+                "status_msg": "success"
+            }
+        })))
+        .mount(&server)
+        .await;
+
+    env.cmd()
+        .env("MINIMAX_API_KEY", "test-key")
+        .env("MINIMAX_TTS_BASE_URL", server.uri())
+        .args(["voices", "minimax"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            "English_expressive_narrator  Expressive Narrator - system: Warm and articulate",
+        ));
 }

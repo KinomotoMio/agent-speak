@@ -90,19 +90,23 @@ Config lives at `~/.config/agent-speak/config.toml`.
 
 ## MiniMax setup
 
-MiniMax is a built-in remote TTS engine. Playback currently targets macOS and uses local `afplay`.
+MiniMax is a built-in cloud TTS engine with high-quality neural voices — included as an example of how API-based engines integrate alongside local ones. Playback uses local `afplay` on macOS.
 
-Required:
+API keys can be set via environment variable or a `.env` file in the project directory:
 
 ```bash
+# Option 1: .env file (recommended)
+echo "MINIMAX_API_KEY=your_api_key" >> .env
+
+# Option 2: environment variable
 export MINIMAX_API_KEY=your_api_key
 ```
 
 Optional:
 
 ```bash
-export MINIMAX_TTS_MODEL=speech-2.8-hd
-export MINIMAX_TTS_BASE_URL=https://api.minimax.io
+MINIMAX_TTS_MODEL=speech-2.8-hd
+MINIMAX_TTS_BASE_URL=https://api.minimax.io
 ```
 
 Example:

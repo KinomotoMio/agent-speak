@@ -1,13 +1,14 @@
 mod config;
 mod engine;
 mod engines;
+mod lang;
 
 use std::fmt;
 
 use clap::{Parser, Subcommand};
 
 use config::{Config, ConfigLoadError, ConfigSaveError};
-use engine::{Engine, EngineError, Registry, SpeakRequest};
+use engine::{Engine, EngineError, Registry, SpeakRequest, VoiceInfo};
 
 #[derive(Parser)]
 #[command(name = "agent-speak", about = "Pluggable TTS for NanoClaw")]
@@ -81,6 +82,9 @@ async fn main() {
 }
 
 async fn run() -> Result<(), AppError> {
+    // Load .env from the project directory (where the binary was built/installed from)
+    let _ = dotenvy::dotenv();
+
     let cli = Cli::parse();
 
     let mut registry = Registry::new();
@@ -155,10 +159,35 @@ async fn cmd_voices(registry: &Registry, engine_id: &str) -> Result<(), AppError
     }
 
     for voice in voices {
-        println!("  {}", voice.name);
+        println!("  {}", format_voice_line(&voice));
     }
 
     Ok(())
+}
+
+fn format_voice_line(voice: &VoiceInfo) -> String {
+    let mut line = voice.id.clone();
+    let mut metadata = Vec::new();
+
+    if voice.name != voice.id {
+        metadata.push(voice.name.clone());
+    }
+
+    if let Some(locale) = &voice.locale {
+        metadata.push(locale.clone());
+    }
+
+    if !metadata.is_empty() {
+        line.push_str("  ");
+        line.push_str(&metadata.join(" | "));
+    }
+
+    if let Some(description) = &voice.description {
+        line.push_str(" - ");
+        line.push_str(description);
+    }
+
+    line
 }
 
 async fn cmd_config(action: ConfigAction) -> Result<(), AppError> {
@@ -264,5 +293,39 @@ impl fmt::Display for AppError {
             }
             AppError::Engine(error) => write!(f, "Error: {error}"),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::engine::VoiceInfo;
+
+    use super::format_voice_line;
+
+    #[test]
+    fn format_voice_line_keeps_simple_output_for_plain_voices() {
+        let voice = VoiceInfo {
+            id: "Samantha".to_string(),
+            name: "Samantha".to_string(),
+            locale: None,
+            description: None,
+        };
+
+        assert_eq!(format_voice_line(&voice), "Samantha");
+    }
+
+    #[test]
+    fn format_voice_line_includes_copyable_id_and_label() {
+        let voice = VoiceInfo {
+            id: "English_expressive_narrator".to_string(),
+            name: "Expressive Narrator".to_string(),
+            locale: None,
+            description: Some("system: Warm, expressive English narration".to_string()),
+        };
+
+        assert_eq!(
+            format_voice_line(&voice),
+            "English_expressive_narrator  Expressive Narrator - system: Warm, expressive English narration"
+        );
     }
 }

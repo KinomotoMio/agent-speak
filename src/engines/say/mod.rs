@@ -44,7 +44,7 @@ impl Engine for SayEngine {
 
         if let Some(voice) = &request.voice {
             cmd.args(["-v", voice]);
-        } else if let Some(lang) = lang::detect_lang(&request.text) {
+        } else if let Some(lang) = crate::lang::detect_lang(&request.text) {
             let sys_lang = lang::system_lang().await;
             if lang != sys_lang {
                 let voice_entries = load_voice_entries().await?;
