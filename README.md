@@ -17,11 +17,13 @@ Built for AI agent workflows — Claude Code, NanoClaw, or any agent that can ru
 
 - **Auto language detection** — detects Chinese, Japanese, Korean, English, French, German, Russian, and more from the text content, then picks the right voice automatically
 - **Smart voice selection** — uses your system's high-quality Siri voice for your default language, falls back to the best available voice for other languages
-- **Pluggable engine system** — ships with macOS `say`, designed for adding more (Edge TTS, OpenAI, ElevenLabs...)
+- **Pluggable engine system** — ships with macOS `say` and MiniMax TTS, designed for adding more (Edge TTS, OpenAI, ElevenLabs...)
 - **Persistent config** — set your default engine/voice once, every call after that is just `agent-speak "text"`
 - **Zero extra runtime dependencies** — single binary, no background service needed
 
 ## Install
+
+**1. Build the binary:**
 
 ```bash
 cargo install --path .
@@ -33,6 +35,18 @@ Or build and copy manually:
 cargo build --release
 cp target/release/agent-speak ~/.local/bin/
 ```
+
+**2. Install the skill** so your agent knows how to use it:
+
+```bash
+# Claude Code — copy into your project's skills directory
+cp -r skills/speak .claude/skills/
+
+# NanoClaw — copy into the container skills directory
+cp -r skills/speak container/skills/
+```
+
+The skill file (`skills/speak/SKILL.md`) teaches the agent when and how to call `agent-speak`. Without it, the agent won't know the tool exists.
 
 ## Usage
 
@@ -73,6 +87,41 @@ agent-speak config reset
 ```
 
 Config lives at `~/.config/agent-speak/config.toml`.
+
+## MiniMax setup
+
+MiniMax is a built-in remote TTS engine. Playback currently targets macOS and uses local `afplay`.
+
+Required:
+
+```bash
+export MINIMAX_API_KEY=your_api_key
+```
+
+Optional:
+
+```bash
+export MINIMAX_TTS_MODEL=speech-2.8-hd
+export MINIMAX_TTS_BASE_URL=https://api.minimax.io
+```
+
+Example:
+
+```bash
+# List MiniMax voices
+agent-speak voices minimax
+
+# Persist a MiniMax default voice
+agent-speak config set-voice minimax English_expressive_narrator
+
+# Switch to MiniMax
+agent-speak config set-engine minimax
+
+# Speak with MiniMax
+agent-speak "Standup starts in 5 minutes"
+```
+
+When no MiniMax voice is configured, `agent-speak` detects the text language and picks a matching MiniMax system voice when possible, then falls back to the first available system voice.
 
 ## How language detection works
 
