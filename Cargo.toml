@@ -1,0 +1,22 @@
+[package]
+name = "agent-speak"
+version = "0.1.0"
+edition = "2024"
+description = "Pluggable TTS CLI for AI agents. Speak text from the terminal with swappable engines."
+license = "MIT"
+readme = "README.md"
+keywords = ["tts", "cli", "speech", "agent", "audio"]
+categories = ["command-line-utilities", "multimedia::audio"]
+
+[dependencies]
+async-trait = "0.1"
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["macros", "process", "rt"] }
+toml = "0.8"
+dirs = "6"
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"
+tempfile = "3"
